@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Conversor Inteligente JPG</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f7fb;
+            color: #2d3748;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 35px 24px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid #e2e8f0;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 22px;
+            color: #1a202c;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        p {
+            font-size: 14px;
+            color: #718096;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+        
+        /* CARD DE AVISO DOS DOWNLOADS MULTIPLOS */
+        .alerta-downloads {
+            background-color: #ebf8ff;
+            border-left: 4px solid #3182ce;
+            color: #2b6cb0;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            text-align: left;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+        .alerta-downloads strong {
+            color: #2b6cb0;
+        }
+
+        input[type="file"] { display: none; }
+        
+        .btn-escolher {
+            display: block;
+            background-color: #edf2f7;
+            color: #4a5568;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            margin-bottom: 12px;
+            border: 2px dashed #cbd5e0;
+            transition: all 0.2s ease;
+        }
+        .btn-escolher:active {
+            background-color: #e2e8f0;
+            transform: scale(0.98);
+        }
+        #fileCount {
+            font-size: 14px;
+            color: #38a169;
+            font-weight: 600;
+            margin-bottom: 25px;
+        }
+        .btn-converter {
+            background-color: #3182ce;
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            border-radius: 12px;
+            width: 100%;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.2);
+            transition: all 0.2s ease;
+        }
+        .btn-converter:active {
+            background-color: #2b6cb0;
+            transform: scale(0.98);
+        }
+        .btn-converter:disabled {
+            background-color: #a0aec0;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        #status {
+            margin-top: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #dd6b20;
+            min-height: 20px;
+        }
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Tratador de imagens</h2>
+        <p>Selecione suas fotos para converter, renomear e otimizar o tamanho automaticamente.</p>
+        
+        <div class="alerta-downloads">
+            💡 <strong>Dica importante:</strong> Na primeira vez, seu celular vai perguntar se autoriza "múltiplos downloads". Toque em <strong>Permitir</strong> para baixar todas as fotos de uma vez!
+        </div>
+
+        <label for="fileInput" class="btn-escolher">📁 Selecionar Fotos</label>
+        <input type="file" id="fileInput" accept="image/*" multiple onchange="atualizarContagem()">
+        
+        <div id="fileCount">Nenhuma foto selecionada</div>
+        
+        <button id="btnConverter" class="btn-converter" onclick="iniciarConversaoLote()">Converter e Baixar</button>
+        
+        <div id="status"></div>
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+        const nomesOrdinais = [
+            "Primeira", "Segunda", "Terceira", "Quarta", "Quinta", 
+            "Sexta", "Setima", "Oitava", "Nona", "Decima",
+            "DecimaPrimeira", "DecimaSegunda", "DecimaTerceira", "DecimaQuarta", "DecimaQuinta"
+        ];
+
+        function atualizarContagem() {
+            const input = document.getElementById('fileInput');
+            const fileCount = document.getElementById('fileCount');
+            const quantidade = input.files.length;
+            
+            if (quantidade === 0) {
+                fileCount.innerText = "Nenhuma foto selecionada";
+            } else if (quantidade === 1) {
+                fileCount.innerText = "1 foto selecionada";
+            } else {
+                fileCount.innerText = quantidade + " fotos selecionadas";
+            }
+        }
+
+        async function iniciarConversaoLote() {
+            const input = document.getElementById('fileInput');
+            const botao = document.getElementById('btnConverter');
+            const status = document.getElementById('status');
+            const arquivos = input.files;
+            
+            const QUALIDADE_FIXA = 0.8;
+
+            if (arquivos.length === 0) {
+                alert("Selecione pelo menos uma foto!");
+                return;
+            }
+
+            botao.disabled = true;
+
+            for (let i = 0; i < arquivos.length; i++) {
+                let nomeDaFoto = i < nomesOrdinais.length ? nomesOrdinais[i] + "Foto.jpg" : "Foto" + (i + 1) + ".jpg"; 
+
+                status.innerText = `Processando: ${nomeDaFoto} (${i + 1} de ${arquivos.length})...`;
+                status.style.color = "#dd6b20";
+                
+                await processarImagem(arquivos[i], nomeDaFoto, QUALIDADE_FIXA);
+                
+                // Intervalo de segurança para o navegador não bloquear os downloads sequenciais
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            status.innerText = "✅ Concluído! Arquivos salvos.";
+            botao.disabled = false;
+            status.style.color = "#38a169";
+        }
+
+        function processarImagem(arquivo, nomeDesejado, qualidade) {
+            return new Promise((resolve) => {
+                const leitor = new FileReader();
+                
+                leitor.onload = function(evento) {
+                    const imagem = new Image();
+                    
+                    imagem.onload = function() {
+                        const canvas = document.getElementById('canvas');
+                        
+                        let largura = imagem.width;
+                        let altura = imagem.height;
+                        const MAX_LARGURA = 1920; 
+                        
+                        if (largura > MAX_LARGURA) {
+                            altura = Math.round(altura * (MAX_LARGURA / largura));
+                            largura = MAX_LARGURA;
+                        }
+
+                        canvas.width = largura;
+                        canvas.height = altura;
+                        const contexto = canvas.getContext('2d');
+                        
+                        contexto.fillStyle = "#FFFFFF";
+                        contexto.fillRect(0, 0, canvas.width, canvas.height);
+                        contexto.drawImage(imagem, 0, 0, largura, altura);
+
+                        const urlConvertida = canvas.toDataURL('image/jpeg', qualidade);
+                        
+                        const linkDownload = document.createElement('a');
+                        linkDownload.download = nomeDesejado;
+                        linkDownload.href = urlConvertida;
+                        linkDownload.click();
+                        
+                        resolve(); 
+                    };
+                    imagem.src = evento.target.result;
+                };
+                leitor.readAsDataURL(arquivo);
+            });
+        }
+    </script>
+</body>
+</html>
