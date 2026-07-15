@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conversor Inteligente JPG</title>
+    <title>Conversor Inteligente - JPG & PDF</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -40,8 +40,6 @@
             margin-bottom: 20px;
             line-height: 1.5;
         }
-        
-        /* CARD DE AVISO DOS DOWNLOADS MULTIPLOS */
         .alerta-downloads {
             background-color: #ebf8ff;
             border-left: 4px solid #3182ce;
@@ -53,12 +51,8 @@
             margin-bottom: 20px;
             line-height: 1.4;
         }
-        .alerta-downloads strong {
-            color: #2b6cb0;
-        }
-
+        .alerta-downloads strong { color: #2b6cb0; }
         input[type="file"] { display: none; }
-        
         .btn-escolher {
             display: block;
             background-color: #edf2f7;
@@ -116,30 +110,29 @@
 </head>
 <body>
     <div class="container">
-        <h2>Tratador de imagens</h2>
-        <p>Selecione suas fotos para converter, renomear e otimizar o tamanho automaticamente.</p>
+        <h2>Lote para Intranet</h2>
+        <p>Selecione fotos ou arquivos PDF. As fotos serão otimizadas para JPG e os PDFs serão renomeados automaticamente.</p>
         
         <div class="alerta-downloads">
-            💡 <strong>Dica importante:</strong> Na primeira vez, seu celular vai perguntar se autoriza "múltiplos downloads". Toque em <strong>Permitir</strong> para baixar todas as fotos de uma vez!
+            💡 <strong>Dica importante:</strong> Na primeira vez, seu celular vai perguntar se autoriza "múltiplos downloads". Toque em <strong>Permitir</strong> para baixar tudo de uma vez!
         </div>
 
-        <label for="fileInput" class="btn-escolher">📁 Selecionar Fotos</label>
-        <input type="file" id="fileInput" accept="image/*" multiple onchange="atualizarContagem()">
+        <label for="fileInput" class="btn-escolher">📁 Selecionar Arquivos</label>
         
-        <div id="fileCount">Nenhuma foto selecionada</div>
+        <input type="file" id="fileInput" accept="image/*, application/pdf" multiple onchange="atualizarContagem()">
         
-        <button id="btnConverter" class="btn-converter" onclick="iniciarConversaoLote()">Converter e Baixar</button>
+        <div id="fileCount">Nenhum arquivo selecionado</div>
+        
+        <button id="btnConverter" class="btn-converter" onclick="iniciarConversaoLote()">Processar e Baixar</button>
         
         <div id="status"></div>
         <canvas id="canvas"></canvas>
     </div>
 
     <script>
-        const nomesOrdinais = [
-            "Primeira", "Segunda", "Terceira", "Quarta", "Quinta", 
-            "Sexta", "Setima", "Oitava", "Nona", "Decima",
-            "DecimaPrimeira", "DecimaSegunda", "DecimaTerceira", "DecimaQuarta", "DecimaQuinta"
-        ];
+        // Dicionários separados para respeitar o gênero das palavras
+        const ordinaisFem = ["Primeira", "Segunda", "Terceira", "Quarta", "Quinta", "Sexta", "Setima", "Oitava", "Nona", "Decima"];
+        const ordinaisMasc = ["Primeiro", "Segundo", "Terceiro", "Quarto", "Quinto", "Sexto", "Setimo", "Oitavo", "Nono", "Decimo"];
 
         function atualizarContagem() {
             const input = document.getElementById('fileInput');
@@ -147,11 +140,11 @@
             const quantidade = input.files.length;
             
             if (quantidade === 0) {
-                fileCount.innerText = "Nenhuma foto selecionada";
+                fileCount.innerText = "Nenhum arquivo selecionado";
             } else if (quantidade === 1) {
-                fileCount.innerText = "1 foto selecionada";
+                fileCount.innerText = "1 arquivo selecionado";
             } else {
-                fileCount.innerText = quantidade + " fotos selecionadas";
+                fileCount.innerText = quantidade + " arquivos selecionados";
             }
         }
 
@@ -164,21 +157,35 @@
             const QUALIDADE_FIXA = 0.8;
 
             if (arquivos.length === 0) {
-                alert("Selecione pelo menos uma foto!");
+                alert("Selecione pelo menos um arquivo!");
                 return;
             }
 
             botao.disabled = true;
 
             for (let i = 0; i < arquivos.length; i++) {
-                let nomeDaFoto = i < nomesOrdinais.length ? nomesOrdinais[i] + "Foto.jpg" : "Foto" + (i + 1) + ".jpg"; 
+                const arquivoAtual = arquivos[i];
+                const isPDF = arquivoAtual.type === 'application/pdf';
+                
+                // Define o nome de acordo com o tipo de arquivo
+                let nomeFinal = "";
+                if (i < 10) {
+                    nomeFinal = isPDF ? `${ordinaisMasc[i]}Documento.pdf` : `${ordinaisFem[i]}Foto.jpg`;
+                } else {
+                    nomeFinal = isPDF ? `Documento${i + 1}.pdf` : `Foto${i + 1}.jpg`;
+                }
 
-                status.innerText = `Processando: ${nomeDaFoto} (${i + 1} de ${arquivos.length})...`;
+                status.innerText = `Processando: ${nomeFinal} (${i + 1} de ${arquivos.length})...`;
                 status.style.color = "#dd6b20";
                 
-                await processarImagem(arquivos[i], nomeDaFoto, QUALIDADE_FIXA);
+                if (isPDF) {
+                    // Se for PDF, apenas renomeia e faz o download direto
+                    await processarPDF(arquivoAtual, nomeFinal);
+                } else {
+                    // Se for imagem, aplica a lógica de conversão e compressão
+                    await processarImagem(arquivoAtual, nomeFinal, QUALIDADE_FIXA);
+                }
                 
-                // Intervalo de segurança para o navegador não bloquear os downloads sequenciais
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
@@ -187,6 +194,22 @@
             status.style.color = "#38a169";
         }
 
+        // Função exclusiva para PDFs
+        function processarPDF(arquivo, nomeDesejado) {
+            return new Promise((resolve) => {
+                const url = URL.createObjectURL(arquivo);
+                const linkDownload = document.createElement('a');
+                linkDownload.download = nomeDesejado;
+                linkDownload.href = url;
+                linkDownload.click();
+                
+                // Limpa a memória após o download
+                setTimeout(() => URL.revokeObjectURL(url), 1000); 
+                resolve();
+            });
+        }
+
+        // Função original de imagens
         function processarImagem(arquivo, nomeDesejado, qualidade) {
             return new Promise((resolve) => {
                 const leitor = new FileReader();
