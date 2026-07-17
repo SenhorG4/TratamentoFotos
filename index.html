@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conversor Inteligente - JPG & PDF</title>
+    <title>Conversor Universal - Fotos e Arquivos</title>
+    
+    <!-- Tradutor de HEIC (iPhone) -->
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    
     <style>
         * { box-sizing: border-box; }
         body {
@@ -27,19 +31,9 @@
             max-width: 380px;
             border: 1px solid #e2e8f0;
         }
-        h2 {
-            margin-top: 0;
-            font-size: 22px;
-            color: #1a202c;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-        }
-        p {
-            font-size: 14px;
-            color: #718096;
-            margin-bottom: 20px;
-            line-height: 1.5;
-        }
+        h2 { margin-top: 0; font-size: 22px; color: #1a202c; font-weight: 700; letter-spacing: -0.5px; }
+        p { font-size: 14px; color: #718096; margin-bottom: 20px; line-height: 1.5; }
+        
         .alerta-downloads {
             background-color: #ebf8ff;
             border-left: 4px solid #3182ce;
@@ -52,6 +46,7 @@
             line-height: 1.4;
         }
         .alerta-downloads strong { color: #2b6cb0; }
+        
         input[type="file"] { display: none; }
         .btn-escolher {
             display: block;
@@ -66,16 +61,10 @@
             border: 2px dashed #cbd5e0;
             transition: all 0.2s ease;
         }
-        .btn-escolher:active {
-            background-color: #e2e8f0;
-            transform: scale(0.98);
-        }
-        #fileCount {
-            font-size: 14px;
-            color: #38a169;
-            font-weight: 600;
-            margin-bottom: 25px;
-        }
+        .btn-escolher:active { background-color: #e2e8f0; transform: scale(0.98); }
+        
+        #fileCount { font-size: 14px; color: #38a169; font-weight: 600; margin-bottom: 25px; }
+        
         .btn-converter {
             background-color: #3182ce;
             color: white;
@@ -89,48 +78,37 @@
             box-shadow: 0 4px 12px rgba(49, 130, 206, 0.2);
             transition: all 0.2s ease;
         }
-        .btn-converter:active {
-            background-color: #2b6cb0;
-            transform: scale(0.98);
-        }
-        .btn-converter:disabled {
-            background-color: #a0aec0;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-        #status {
-            margin-top: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #dd6b20;
-            min-height: 20px;
-        }
+        .btn-converter:active { background-color: #2b6cb0; transform: scale(0.98); }
+        .btn-converter:disabled { background-color: #a0aec0; cursor: not-allowed; box-shadow: none; }
+        
+        #status { margin-top: 20px; font-size: 14px; font-weight: 600; color: #dd6b20; min-height: 20px; }
         canvas { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Lote para Intranet</h2>
-        <p>Selecione fotos ou arquivos PDF. As fotos serão otimizadas para JPG e os PDFs serão renomeados automaticamente.</p>
+        <p>Selecione <b>qualquer tipo de arquivo</b>. Fotos serão otimizadas para JPG. Outros arquivos e PDFs serão renomeados automaticamente.</p>
         
         <div class="alerta-downloads">
-            💡 <strong>Dica importante:</strong> Na primeira vez, seu celular vai perguntar se autoriza "múltiplos downloads". Toque em <strong>Permitir</strong> para baixar tudo de uma vez!
+            💡 <strong>Dica:</strong> Seu celular vai perguntar se autoriza "múltiplos downloads". Toque em <strong>Permitir</strong> para baixar tudo!
         </div>
 
-        <label for="fileInput" class="btn-escolher">📁 Selecionar Arquivos</label>
+        <label for="fileInput" class="btn-escolher">📁 Selecionar Qualquer Arquivo</label>
         
-        <input type="file" id="fileInput" accept="image/*, application/pdf" multiple onchange="atualizarContagem()">
+        <!-- O accept foi removido para permitir EXATAMENTE TODOS OS ARQUIVOS -->
+        <input type="file" id="fileInput" multiple onchange="atualizarContagem()">
         
         <div id="fileCount">Nenhum arquivo selecionado</div>
         
-        <button id="btnConverter" class="btn-converter" onclick="iniciarConversaoLote()">Processar e Baixar</button>
+        <button id="btnConverter" class="btn-converter" onclick="iniciarConversaoLote()">Processar e Baixar Tudo</button>
         
         <div id="status"></div>
         <canvas id="canvas"></canvas>
     </div>
 
     <script>
-        // Dicionários separados para respeitar o gênero das palavras
+        // Dicionários dinâmicos de gênero
         const ordinaisFem = ["Primeira", "Segunda", "Terceira", "Quarta", "Quinta", "Sexta", "Setima", "Oitava", "Nona", "Decima"];
         const ordinaisMasc = ["Primeiro", "Segundo", "Terceiro", "Quarto", "Quinto", "Sexto", "Setimo", "Oitavo", "Nono", "Decimo"];
 
@@ -164,26 +142,58 @@
             botao.disabled = true;
 
             for (let i = 0; i < arquivos.length; i++) {
-                const arquivoAtual = arquivos[i];
-                const isPDF = arquivoAtual.type === 'application/pdf';
+                let arquivoAtual = arquivos[i];
                 
-                // Define o nome de acordo com o tipo de arquivo
+                // Análise inteligente do tipo de arquivo
+                const nomeOriginal = arquivoAtual.name;
+                const extensaoOriginal = nomeOriginal.includes('.') ? nomeOriginal.split('.').pop().toLowerCase() : '';
+                
+                const isPDF = arquivoAtual.type === 'application/pdf' || extensaoOriginal === 'pdf';
+                const isHEIC = extensaoOriginal === 'heic' || extensaoOriginal === 'heif' || arquivoAtual.type === 'image/heic';
+                const isImagemPadrao = arquivoAtual.type.startsWith('image/') && !isHEIC;
+                
                 let nomeFinal = "";
-                if (i < 10) {
-                    nomeFinal = isPDF ? `${ordinaisMasc[i]}Documento.pdf` : `${ordinaisFem[i]}Foto.jpg`;
-                } else {
-                    nomeFinal = isPDF ? `Documento${i + 1}.pdf` : `Foto${i + 1}.jpg`;
+                let tipoProcesso = "";
+
+                // Define o nome de acordo com a análise
+                if (isImagemPadrao || isHEIC) {
+                    nomeFinal = (i < 10) ? `${ordinaisFem[i]}Foto.jpg` : `Foto${i + 1}.jpg`;
+                    tipoProcesso = "foto";
+                } 
+                else if (isPDF) {
+                    nomeFinal = (i < 10) ? `${ordinaisMasc[i]}Documento.pdf` : `Documento${i + 1}.pdf`;
+                    tipoProcesso = "generico";
+                } 
+                else {
+                    // Para todos os outros arquivos do mundo (Planilhas, Vídeos, Word, Zip...)
+                    const extFinal = extensaoOriginal ? `.${extensaoOriginal}` : '';
+                    nomeFinal = (i < 10) ? `${ordinaisMasc[i]}Arquivo${extFinal}` : `Arquivo${i + 1}${extFinal}`;
+                    tipoProcesso = "generico";
                 }
 
-                status.innerText = `Processando: ${nomeFinal} (${i + 1} de ${arquivos.length})...`;
-                status.style.color = "#dd6b20";
-                
-                if (isPDF) {
-                    // Se for PDF, apenas renomeia e faz o download direto
-                    await processarPDF(arquivoAtual, nomeFinal);
-                } else {
-                    // Se for imagem, aplica a lógica de conversão e compressão
+                if (isHEIC) {
+                    status.innerText = `Traduzindo HEIC (iPhone): ${nomeFinal} (${i + 1} de ${arquivos.length})...`;
+                    status.style.color = "#805ad5"; 
+                    try {
+                        const conversaoBlob = await heic2any({ blob: arquivoAtual, toType: "image/jpeg" });
+                        const blobFinal = Array.isArray(conversaoBlob) ? conversaoBlob[0] : conversaoBlob;
+                        await processarImagem(blobFinal, nomeFinal, QUALIDADE_FIXA);
+                    } catch (erro) {
+                        alert(`Falha no iPhone HEIC: ${nomeOriginal}. Tentando exportar o original.`);
+                        // Fallback se o iPhone mandar um HEIC corrompido, salva como genérico
+                        await processarArquivoGenerico(arquivoAtual, nomeFinal.replace('.jpg', '.heic'));
+                    }
+                } 
+                else if (tipoProcesso === "foto") {
+                    status.innerText = `Processando: ${nomeFinal} (${i + 1} de ${arquivos.length})...`;
+                    status.style.color = "#dd6b20";
                     await processarImagem(arquivoAtual, nomeFinal, QUALIDADE_FIXA);
+                } 
+                else {
+                    // Trata PDFs e todos os outros arquivos "desconhecidos"
+                    status.innerText = `Renomeando Arquivo: ${nomeFinal} (${i + 1} de ${arquivos.length})...`;
+                    status.style.color = "#3182ce"; // Cor azul para arquivos diversos
+                    await processarArquivoGenerico(arquivoAtual, nomeFinal);
                 }
                 
                 await new Promise(resolve => setTimeout(resolve, 1000));
@@ -194,32 +204,27 @@
             status.style.color = "#38a169";
         }
 
-        // Função exclusiva para PDFs
-        function processarPDF(arquivo, nomeDesejado) {
+        // Função para repassar e baixar TUDO que não precisa virar imagem
+        function processarArquivoGenerico(arquivo, nomeDesejado) {
             return new Promise((resolve) => {
                 const url = URL.createObjectURL(arquivo);
                 const linkDownload = document.createElement('a');
                 linkDownload.download = nomeDesejado;
                 linkDownload.href = url;
                 linkDownload.click();
-                
-                // Limpa a memória após o download
                 setTimeout(() => URL.revokeObjectURL(url), 1000); 
                 resolve();
             });
         }
 
-        // Função original de imagens
+        // Função de conversão e compressão de imagens
         function processarImagem(arquivo, nomeDesejado, qualidade) {
             return new Promise((resolve) => {
                 const leitor = new FileReader();
-                
                 leitor.onload = function(evento) {
                     const imagem = new Image();
-                    
                     imagem.onload = function() {
                         const canvas = document.getElementById('canvas');
-                        
                         let largura = imagem.width;
                         let altura = imagem.height;
                         const MAX_LARGURA = 1920; 
@@ -238,12 +243,10 @@
                         contexto.drawImage(imagem, 0, 0, largura, altura);
 
                         const urlConvertida = canvas.toDataURL('image/jpeg', qualidade);
-                        
                         const linkDownload = document.createElement('a');
                         linkDownload.download = nomeDesejado;
                         linkDownload.href = urlConvertida;
                         linkDownload.click();
-                        
                         resolve(); 
                     };
                     imagem.src = evento.target.result;
