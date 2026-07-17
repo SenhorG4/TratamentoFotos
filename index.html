@@ -3,132 +3,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Conversor Universal - Fotos e Arquivos</title>
+    <title>Conversor Universal</title>
     
-    <!-- LINKS DO PWA -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3182ce">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- Tradutor de HEIC (iPhone) -->
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
     
     <style>
         * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f5f7fb;
-            color: #2d3748;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
+            background-color: #f5f7fb; color: #2d3748;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 20px;
         }
         .container {
-            background-color: #ffffff;
-            padding: 35px 24px;
-            border-radius: 20px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            text-align: center;
-            width: 100%;
-            max-width: 380px;
-            border: 1px solid #e2e8f0;
+            background-color: #ffffff; padding: 35px 24px;
+            border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center; width: 100%; max-width: 380px;
         }
-        h2 { margin-top: 0; font-size: 22px; color: #1a202c; font-weight: 700; letter-spacing: -0.5px; }
+        h2 { margin-top: 0; font-size: 22px; color: #1a202c; font-weight: 700; }
         p { font-size: 14px; color: #718096; margin-bottom: 20px; line-height: 1.5; }
         
-        .alerta-downloads {
-            background-color: #ebf8ff;
-            border-left: 4px solid #3182ce;
-            color: #2b6cb0;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            text-align: left;
-            margin-bottom: 20px;
-            line-height: 1.4;
-        }
-        .alerta-downloads strong { color: #2b6cb0; }
+        .alerta { background-color: #ebf8ff; border-left: 4px solid #3182ce; color: #2b6cb0; padding: 12px; border-radius: 8px; font-size: 13px; text-align: left; margin-bottom: 20px; }
         
         input[type="file"] { display: none; }
         .btn-escolher {
-            display: block;
-            background-color: #edf2f7;
-            color: #4a5568;
-            padding: 16px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            margin-bottom: 12px;
-            border: 2px dashed #cbd5e0;
-            transition: all 0.2s ease;
+            display: block; background-color: #edf2f7; color: #4a5568; padding: 16px; border-radius: 12px; font-weight: 600; cursor: pointer; margin-bottom: 12px; border: 2px dashed #cbd5e0;
         }
-        .btn-escolher:active { background-color: #e2e8f0; transform: scale(0.98); }
-        
         #fileCount { font-size: 14px; color: #38a169; font-weight: 600; margin-bottom: 25px; }
         
-        .btn-converter {
-            background-color: #3182ce;
-            color: white;
-            border: none;
-            padding: 16px;
-            font-size: 16px;
-            font-weight: 700;
-            border-radius: 12px;
-            width: 100%;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.2);
-            transition: all 0.2s ease;
-        }
-        .btn-converter:active { background-color: #2b6cb0; transform: scale(0.98); }
-        .btn-converter:disabled { background-color: #a0aec0; cursor: not-allowed; box-shadow: none; }
-        
+        .btn-converter { background-color: #3182ce; color: white; border: none; padding: 16px; font-size: 16px; font-weight: 700; border-radius: 12px; width: 100%; cursor: pointer; }
         #status { margin-top: 20px; font-size: 14px; font-weight: 600; color: #dd6b20; min-height: 20px; }
         canvas { display: none; }
+
+        /* ESTILOS DO POP-UP DE INSTALAÇÃO */
+        #installBanner {
+            display: none; /* Escondido por padrão */
+            position: fixed; bottom: 0; left: 0; width: 100%;
+            background-color: #1a202c; color: white;
+            padding: 16px 20px;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: flex; justify-content: space-between; align-items: center;
+            border-top-left-radius: 16px; border-top-right-radius: 16px;
+            transform: translateY(100%); transition: transform 0.4s ease-out;
+        }
+        #installBanner.show { transform: translateY(0); display: flex; }
+        .banner-text { text-align: left; font-size: 13px; line-height: 1.4; flex: 1; margin-right: 15px; }
+        .banner-text strong { display: block; font-size: 15px; margin-bottom: 4px; }
+        .banner-buttons { display: flex; flex-direction: column; gap: 8px; }
+        .btn-instalar-app { background-color: #48bb78; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-ignorar { background: none; color: #a0aec0; border: none; font-size: 12px; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
+
     <div class="container">
         <h2>Lote para Intranet</h2>
         <p>Selecione <b>qualquer arquivo</b>. Fotos viram JPG otimizado e outros arquivos serão renomeados.</p>
         
-        <div class="alerta-downloads">
-            💡 <strong>Dica:</strong> Toque em <strong>Permitir</strong> quando o celular perguntar sobre "múltiplos downloads".
-        </div>
+        <div class="alerta">💡 Toque em <strong>Permitir</strong> quando o celular perguntar sobre múltiplos downloads.</div>
 
         <label for="fileInput" class="btn-escolher">📁 Selecionar Arquivos</label>
         <input type="file" id="fileInput" multiple onchange="atualizarContagem()">
         
-        <div id="fileCount">Nenhum arquivo seleccionado</div>
-        
+        <div id="fileCount">Nenhum arquivo selecionado</div>
         <button id="btnConverter" class="btn-converter" onclick="iniciarConversaoLote()">Processar e Baixar Tudo</button>
-        
         <div id="status"></div>
         <canvas id="canvas"></canvas>
     </div>
 
+    <!-- POP-UP DE INSTALAÇÃO (BANNER INFERIOR) -->
+    <div id="installBanner">
+        <div class="banner-text">
+            <strong>Instalar Aplicativo</strong>
+            Adicione à tela inicial para usar mais rápido no dia a dia.
+        </div>
+        <div class="banner-buttons">
+            <button id="btnInstallConfirm" class="btn-instalar-app">Instalar</button>
+            <button id="btnInstallClose" class="btn-ignorar">Agora não</button>
+        </div>
+    </div>
+
     <script>
-        // REGISTRO AUTOMÁTICO DO APP (PWA) no celular do cliente
+        // --- LÓGICA DO POP-UP DE INSTALAÇÃO ---
+        let deferredPrompt;
+        const installBanner = document.getElementById('installBanner');
+        const btnInstallConfirm = document.getElementById('btnInstallConfirm');
+        const btnInstallClose = document.getElementById('btnInstallClose');
+
+        // Escuta o sinal do Android avisando que o app pode ser instalado
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault(); // Impede o mini-banner padrão do Chrome
+            deferredPrompt = e; // Salva o evento para usar no nosso botão
+            installBanner.classList.add('show'); // Mostra o nosso pop-up bonitão
+        });
+
+        // Quando o vendedor clica no NOSSO botão de instalar
+        btnInstallConfirm.addEventListener('click', async () => {
+            installBanner.classList.remove('show'); // Esconde o banner
+            if (deferredPrompt) {
+                deferredPrompt.prompt(); // Abre a telinha oficial de instalação do Android
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+            }
+        });
+
+        // Quando o vendedor recusa a instalação
+        btnInstallClose.addEventListener('click', () => {
+            installBanner.classList.remove('show');
+        });
+
+
+        // --- LÓGICA DE SERVICE WORKER (PWA) ---
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('sw.js')
-            .then(() => console.log("App Pronto para uso Offline!"))
-            .catch((err) => console.log("Erro ao preparar App: ", err));
+            navigator.serviceWorker.register('sw.js').catch((err) => console.log(err));
         }
 
+        // --- LÓGICA DO CONVERSOR (Mantida intacta) ---
         const ordinaisFem = ["Primeira", "Segunda", "Terceira", "Quarta", "Quinta", "Sexta", "Setima", "Oitava", "Nona", "Decima"];
         const ordinaisMasc = ["Primeiro", "Segundo", "Terceiro", "Quarto", "Quinto", "Sexto", "Setimo", "Oitavo", "Nono", "Decimo"];
 
         function atualizarContagem() {
             const input = document.getElementById('fileInput');
             const fileCount = document.getElementById('fileCount');
-            const quantidade = input.files.length;
-            if (quantidade === 0) { fileCount.innerText = "Nenhum arquivo selecionado"; }
-            else if (quantidade === 1) { fileCount.innerText = "1 arquivo selecionado"; }
-            else { fileCount.innerText = quantidade + " arquivos selecionados"; }
+            const qtd = input.files.length;
+            fileCount.innerText = qtd === 0 ? "Nenhum arquivo selecionado" : (qtd === 1 ? "1 arquivo selecionado" : `${qtd} arquivos selecionados`);
         }
 
         async function iniciarConversaoLote() {
@@ -136,100 +139,64 @@
             const botao = document.getElementById('btnConverter');
             const status = document.getElementById('status');
             const arquivos = input.files;
-            const QUALIDADE_FIXA = 0.8;
-
-            if (arquivos.length === 0) { alert("Selecione pelo menos um arquivo!"); return; }
+            
+            if (arquivos.length === 0) return alert("Selecione pelo menos um arquivo!");
             botao.disabled = true;
 
             for (let i = 0; i < arquivos.length; i++) {
-                let arquivoAtual = arquivos[i];
-                const nomeOriginal = arquivoAtual.name;
-                const extensaoOriginal = nomeOriginal.includes('.') ? nomeOriginal.split('.').pop().toLowerCase() : '';
+                let arq = arquivos[i];
+                let ext = arq.name.includes('.') ? arq.name.split('.').pop().toLowerCase() : '';
                 
-                const isPDF = arquivoAtual.type === 'application/pdf' || extensaoOriginal === 'pdf';
-                const isHEIC = extensaoOriginal === 'heic' || extensaoOriginal === 'heif' || arquivoAtual.type === 'image/heic';
-                const isImagemPadrao = arquivoAtual.type.startsWith('image/') && !isHEIC;
+                const isPDF = arq.type === 'application/pdf' || ext === 'pdf';
+                const isHEIC = ext === 'heic' || ext === 'heif' || arq.type === 'image/heic';
+                const isImg = arq.type.startsWith('image/') && !isHEIC;
                 
-                let nomeFinal = "";
-                let tipoProcesso = "";
-
-                if (isImagemPadrao || isHEIC) {
-                    nomeFinal = (i < 10) ? `${ordinaisFem[i]}Foto.jpg` : `Foto${i + 1}.jpg`;
-                    tipoProcesso = "foto";
-                } else if (isPDF) {
-                    nomeFinal = (i < 10) ? `${ordinaisMasc[i]}Documento.pdf` : `Documento${i + 1}.pdf`;
-                    tipoProcesso = "generico";
-                } else {
-                    const extFinal = extensaoOriginal ? `.${extensaoOriginal}` : '';
-                    nomeFinal = (i < 10) ? `${ordinaisMasc[i]}Arquivo${extFinal}` : `Arquivo${i + 1}${extFinal}`;
-                    tipoProcesso = "generico";
-                }
+                let nome = (isImg || isHEIC) ? ((i<10) ? `${ordinaisFem[i]}Foto.jpg` : `Foto${i+1}.jpg`) :
+                           (isPDF) ? ((i<10) ? `${ordinaisMasc[i]}Documento.pdf` : `Documento${i+1}.pdf`) :
+                           ((i<10) ? `${ordinaisMasc[i]}Arquivo.${ext}` : `Arquivo${i+1}.${ext}`);
 
                 if (isHEIC) {
-                    status.innerText = `Traduzindo HEIC (iPhone): ${nomeFinal}...`;
-                    status.style.color = "#805ad5"; 
+                    status.innerText = `Traduzindo HEIC: ${nome}...`; status.style.color = "#805ad5";
                     try {
-                        const conversaoBlob = await heic2any({ blob: arquivoAtual, toType: "image/jpeg" });
-                        const blobFinal = Array.isArray(conversaoBlob) ? conversaoBlob[0] : conversaoBlob;
-                        await processarImagem(blobFinal, nomeFinal, QUALIDADE_FIXA);
-                    } catch (erro) {
-                        await processarArquivoGenerico(arquivoAtual, nomeFinal.replace('.jpg', '.heic'));
-                    }
-                } else if (tipoProcesso === "foto") {
-                    status.innerText = `Processando: ${nomeFinal}...`;
-                    status.style.color = "#dd6b20";
-                    await processarImagem(arquivoAtual, nomeFinal, QUALIDADE_FIXA);
+                        const conv = await heic2any({ blob: arq, toType: "image/jpeg" });
+                        await processarImagem(Array.isArray(conv) ? conv[0] : conv, nome, 0.8);
+                    } catch (e) { await processarGenerico(arq, nome.replace('.jpg', '.heic')); }
+                } else if (isImg) {
+                    status.innerText = `Processando: ${nome}...`; status.style.color = "#dd6b20";
+                    await processarImagem(arq, nome, 0.8);
                 } else {
-                    status.innerText = `Renomeando: ${nomeFinal}...`;
-                    status.style.color = "#3182ce";
-                    await processarArquivoGenerico(arquivoAtual, nomeFinal);
+                    status.innerText = `Renomeando: ${nome}...`; status.style.color = "#3182ce";
+                    await processarGenerico(arq, nome);
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                await new Promise(r => setTimeout(r, 1000));
             }
-            status.innerText = "✅ Concluído! Arquivos salvos.";
-            botao.disabled = false;
-            status.style.color = "#38a169";
+            status.innerText = "✅ Concluído!"; botao.disabled = false; status.style.color = "#38a169";
         }
 
-        function processarArquivoGenerico(arquivo, nomeDesejado) {
-            return new Promise((resolve) => {
-                const url = URL.createObjectURL(arquivo);
-                const linkDownload = document.createElement('a');
-                linkDownload.download = nomeDesejado;
-                linkDownload.href = url;
-                linkDownload.click();
-                setTimeout(() => URL.revokeObjectURL(url), 1000); 
-                resolve();
+        function processarGenerico(arq, nome) {
+            return new Promise(res => {
+                const url = URL.createObjectURL(arq);
+                const a = document.createElement('a'); a.download = nome; a.href = url; a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000); res();
             });
         }
 
-        function processarImagem(arquivo, nomeDesejado, qualidade) {
-            return new Promise((resolve) => {
+        function processarImagem(arq, nome, qual) {
+            return new Promise(res => {
                 const leitor = new FileReader();
-                leitor.onload = function(evento) {
-                    const imagem = new Image();
-                    imagem.onload = function() {
-                        const canvas = document.getElementById('canvas');
-                        let largura = imagem.width; let altura = imagem.height;
-                        const MAX_LARGURA = 1920; 
-                        if (largura > MAX_LARGURA) {
-                            altura = Math.round(altura * (MAX_LARGURA / largura));
-                            largura = MAX_LARGURA;
-                        }
-                        canvas.width = largura; canvas.height = altura;
-                        const contexto = canvas.getContext('2d');
-                        contexto.fillStyle = "#FFFFFF";
-                        contexto.fillRect(0, 0, canvas.width, canvas.height);
-                        contexto.drawImage(imagem, 0, 0, largura, altura);
-                        const urlConvertida = canvas.toDataURL('image/jpeg', quality = qualidade);
-                        const linkDownload = document.createElement('a');
-                        linkDownload.download = nomeDesejado; linkDownload.href = urlConvertida;
-                        linkDownload.click();
-                        resolve(); 
-                    };
-                    imagem.src = evento.target.result;
-                };
-                leitor.readAsDataURL(arquivo);
+                leitor.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const cvs = document.getElementById('canvas');
+                        let w = img.width, h = img.height;
+                        if (w > 1920) { h = Math.round(h * (1920 / w)); w = 1920; }
+                        cvs.width = w; cvs.height = h;
+                        const ctx = cvs.getContext('2d');
+                        ctx.fillStyle = "#FFF"; ctx.fillRect(0, 0, w, h); ctx.drawImage(img, 0, 0, w, h);
+                        const a = document.createElement('a'); a.download = nome; a.href = cvs.toDataURL('image/jpeg', qual); a.click();
+                        res(); 
+                    }; img.src = e.target.result;
+                }; leitor.readAsDataURL(arq);
             });
         }
     </script>
